@@ -1,5 +1,7 @@
 # Breach — turn-based CS tactics
 
+Live: https://breach-cs-tactics.fly.dev
+
 Two-player, browser-based, simultaneous-turn strategy game in the style of Counter-Strike. One player commands the Terrorists (plant the bomb and hold the site until it detonates), the other the Counter-Terrorists (defend sites A and B).
 
 ## Run it
