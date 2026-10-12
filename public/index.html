@@ -15,6 +15,7 @@
         <label>Your name <input id="name" maxlength="24" placeholder="Player" /></label>
         <div class="row">
           <button id="btn-create" class="primary">Create room</button>
+          <button id="btn-quick-cpu">Quick game vs CPU</button>
         </div>
         <div class="row">
           <input id="join-code" maxlength="5" placeholder="Room code" />
@@ -36,6 +37,14 @@
           <div class="row">
             <button id="btn-levers">Levers…</button>
             <button id="btn-start" class="primary">Start match</button>
+          </div>
+          <div class="row" id="cpu-row">
+            <span class="muted">No opponent?</span>
+            <select id="cpu-diff">
+              <option value="normal">Normal CPU</option>
+              <option value="easy">Easy CPU</option>
+            </select>
+            <button id="btn-cpu">Play vs CPU</button>
           </div>
         </div>
         <p id="guest-note" class="muted">Waiting for the host to start. <a href="#" id="btn-levers-guest">View levers</a></p>

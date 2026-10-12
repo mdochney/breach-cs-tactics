@@ -740,7 +740,7 @@ function endRound(state, winner, reason) {
   for (const u of state.units) state.teams[u.side].gear[u.n - 1] = u.alive ? pickGear(u) : defaultGear(cfg, u.side);
   const wp = state.sideOf.indexOf(winner);
   state.score[wp]++;
-  state.history.push({ round: state.round, winner, reason, winnerPlayer: wp });
+  state.history.push({ round: state.round, winner, reason, winnerPlayer: wp, turns: state.turn });
   state.roundResult = { winner, reason, rewards, winnerPlayer: wp };
   state.pending = { T: null, CT: null };
   state.phase = 'roundEnd';

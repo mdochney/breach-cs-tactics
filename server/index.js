@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 import { DEFAULT_CONFIG, mergeConfig } from '../shared/config.js';
 import * as E from '../shared/engine.js';
+import { botSetup, botOrders, DIFFICULTIES } from '../shared/bot.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = Number(process.env.PORT || 8080);
@@ -70,7 +71,7 @@ function lobbyInfo(room, seat) {
     code: room.code,
     seat,
     host: room.host,
-    players: room.seats.map((s) => (s ? { name: s.name, connected: !!s.ws } : null)),
+    players: room.seats.map((s) => (s ? { name: s.name, connected: !!s.ws || !!s.cpu, cpu: !!s.cpu } : null)),
     config: room.config,
     inMatch: !!room.state,
   };
@@ -94,6 +95,43 @@ function broadcast(room) {
     send(s.ws, lobbyInfo(room, i));
     if (room.state) send(s.ws, { t: 'state', view: E.viewFor(room.state, i) });
   });
+  scheduleBot(room);
+}
+
+// ---------- CPU opponent ----------
+
+const cpuSeat = (room) => room.seats.findIndex((s) => s && s.cpu);
+
+function scheduleBot(room) {
+  const seat = cpuSeat(room);
+  const st = room.state;
+  if (seat < 0 || !st || room.botTimer) return;
+  const side = st.sideOf[seat];
+  if (st.pending[side] || !['setup', 'planning', 'roundEnd'].includes(st.phase)) return;
+  const key = `${st.phase}:${st.round}:${st.turn}`;
+  room.botTimer = setTimeout(() => {
+    room.botTimer = null;
+    if (room.state !== st || `${st.phase}:${st.round}:${st.turn}` !== key || st.pending[side]) return scheduleBot(room);
+    const cpu = room.seats[seat];
+    const mem = (room.botMem ||= {});
+    try {
+      const view = E.viewFor(st, seat);
+      let r;
+      if (st.phase === 'setup') {
+        r = E.submitSetup(st, side, botSetup(view, mem, cpu.difficulty));
+        if (!r.ok) r = E.submitSetup(st, side, E.autoSetup(st, side));
+      } else if (st.phase === 'planning') {
+        r = E.submitOrders(st, side, botOrders(view, mem, cpu.difficulty));
+        if (!r.ok) r = E.submitOrders(st, side, {});
+      } else r = E.ackRoundEnd(st, side);
+      if (!r.ok) console.error('bot submission failed:', r.error);
+    } catch (e) {
+      console.error('bot error', e);
+      if (st.phase === 'planning') E.submitOrders(st, side, {});
+      else if (st.phase === 'setup') E.submitSetup(st, side, E.autoSetup(st, side));
+    }
+    broadcast(room);
+  }, st.phase === 'roundEnd' ? 150 : 500);
 }
 
 function seatSide(room, seat) {
@@ -158,6 +196,28 @@ function handle(ws, msg) {
       const sides = room.host === 0 ? [hostSide, E.other(hostSide)] : [E.other(hostSide), hostSide];
       room.state = E.createMatch({ config: room.config, seed: crypto.randomInt(2 ** 31), firstSides: sides });
       room.deadlineKey = null;
+      room.botMem = {};
+      return broadcast(room);
+    }
+    case 'startCpu': {
+      if (!isHost) return err('Only the host can start');
+      const other = room.seats[1 - seat];
+      if (other && !other.cpu) return err('A human opponent is in the room — remove the CPU option or play them');
+      const difficulty = DIFFICULTIES.includes(msg.difficulty) ? msg.difficulty : 'normal';
+      room.seats[1 - seat] = { name: `CPU (${difficulty[0].toUpperCase()}${difficulty.slice(1)})`, cpu: true, difficulty, ws: null, token: null };
+      room.botMem = {};
+      let hostSide = msg.hostSide;
+      if (hostSide !== 'T' && hostSide !== 'CT') hostSide = crypto.randomInt(2) ? 'T' : 'CT';
+      const sides = seat === 0 ? [hostSide, E.other(hostSide)] : [E.other(hostSide), hostSide];
+      room.state = E.createMatch({ config: room.config, seed: crypto.randomInt(2 ** 31), firstSides: sides });
+      room.deadlineKey = null;
+      return broadcast(room);
+    }
+    case 'removeCpu': {
+      if (!isHost) return err('Only the host can do that');
+      if (room.state) return err('End the match first');
+      const i = cpuSeat(room);
+      if (i >= 0) room.seats[i] = null;
       return broadcast(room);
     }
     case 'leaveMatch': {

@@ -12,6 +12,11 @@
 export const MAPS = {
   dust: {
     name: 'Dust (v0)',
+    // Where CPU Terrorists gather before hitting each site (one route is picked per round).
+    stages: {
+      A: [{ x: 22, y: 7 }, { x: 32, y: 11 }],
+      B: [{ x: 13, y: 7 }, { x: 3, y: 11 }],
+    },
     ascii: [
       '####################################',
       '#BBBBBBBBB####CCCCCCCC####AAAAAAAAA#',
@@ -58,6 +63,7 @@ export function getMap(id = 'dust') {
     h,
     rows,
     at,
+    stages: def.stages || null,
     walkable: (x, y) => at(x, y) !== '#',
     blocksLOS: (x, y) => at(x, y) === '#',
     isCover: (x, y) => 'cabtk'.includes(at(x, y)),

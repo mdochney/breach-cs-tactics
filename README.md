@@ -15,6 +15,25 @@ npm test             # engine tests: bot matches, fog-of-war leak checks, scenar
 
 Open the page, **Create room**, and send the link to your opponent (or open it in a second browser/incognito window to play both sides).
 
+## Playing the CPU
+
+Use **Quick game vs CPU** on the start screen, or **Play vs CPU** in a room (Easy or Normal).
+
+The CPU runs on the server and only sees its side's fog-of-war view, so it can't cheat.
+
+- **Normal T**: picks a site and a route each round, groups up out of sight, then executes with flashes, molotovs and smokes. It plants and plays post-plant from cover.
+- **Normal CT**: holds hidden on cover across both sites with a mid rotator. It rotates on sightings and sounds, and retakes and defuses after a plant.
+- **Easy**: no utility, no hiding, everyone runs.
+
+## Balance simulator
+
+```bash
+npm run sim                      # 50 CPU-vs-CPU matches with default levers
+npm run sim -- 200 levers.json   # with levers JSON copied out of the in-game editor
+```
+
+It prints the T round win rate, the average turns per round and how rounds end. Use it to see what a lever change does before playing it.
+
 ## How a round works
 
 1. **Setup** (simultaneous, timed). Buy gear from the team bank, place units in your zone, pick the bomb carrier (T). Units placed on cover can start **Hidden**. The CT zone includes both sites by default.

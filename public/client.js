@@ -50,6 +50,10 @@ const send = (m) => S.ws && S.ws.readyState === 1 && S.ws.send(JSON.stringify(m)
 function onMessage(m) {
   if (m.t === 'joined') {
     S.session = { code: m.code, token: m.token, seat: m.seat };
+    if (S.quickCpu) {
+      S.quickCpu = false;
+      send({ t: 'startCpu', difficulty: 'normal', hostSide: 'random' });
+    }
     localStorage.setItem(`breach:${m.code}`, m.token);
     history.replaceState(null, '', `?room=${m.code}`);
   } else if (m.t === 'lobby') {
@@ -91,6 +95,14 @@ $('#btn-copy').onclick = () => {
   toast('Link copied');
 };
 $('#btn-start').onclick = () => send({ t: 'start', hostSide: $('#host-side').value });
+$('#btn-cpu').onclick = () => send({ t: 'startCpu', difficulty: $('#cpu-diff').value, hostSide: $('#host-side').value });
+$('#btn-quick-cpu').onclick = () => {
+  S.quickCpu = true;
+  connect(() => send({ t: 'create', name: myName() }));
+};
+$('#players').addEventListener('click', (e) => {
+  if (e.target.closest('[data-remove-cpu]')) send({ t: 'removeCpu' });
+});
 $('#btn-levers').onclick = () => openLevers();
 $('#btn-levers-guest').onclick = (e) => {
   e.preventDefault();
@@ -116,12 +128,14 @@ function renderLobby() {
   $('#room-code').textContent = L.code;
   $('#room-link').value = `${location.origin}/?room=${L.code}`;
   $('#players').innerHTML = L.players
-    .map((p, i) => `<li>${p ? `<span class="dot ${p.connected ? 'on' : ''}"></span>${esc(p.name)}${i === L.host ? ' <span class="muted">(host)</span>' : ''}${i === L.seat ? ' <span class="muted">— you</span>' : ''}` : '<span class="muted">Waiting for opponent… share the link</span>'}</li>`)
+    .map((p, i) => `<li>${p ? `<span class="dot ${p.connected ? 'on' : ''}"></span>${esc(p.name)}${i === L.host ? ' <span class="muted">(host)</span>' : ''}${i === L.seat ? ' <span class="muted">— you</span>' : ''}${p.cpu && L.host === L.seat ? ' <a href="#" data-remove-cpu class="muted">remove</a>' : ''}` : '<span class="muted">Waiting for opponent… share the link</span>'}</li>`)
     .join('');
   const host = L.host === L.seat;
+  const opp = L.players[1 - L.seat];
   $('#host-controls').hidden = !host;
   $('#guest-note').hidden = host;
   $('#btn-start').disabled = !(L.players[0] && L.players[1]);
+  $('#cpu-row').hidden = !!opp && !opp.cpu;
 }
 
 // ---------------- levers ----------------
