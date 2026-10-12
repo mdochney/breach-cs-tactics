@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Breach — CS Tactics</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div id="lobby" class="screen">
+    <div class="lobby-card">
+      <h1>BREACH</h1>
+      <p class="tag">Turn-based Counter-Strike tactics for two players</p>
+      <div id="lobby-entry">
+        <label>Your name <input id="name" maxlength="24" placeholder="Player" /></label>
+        <div class="row">
+          <button id="btn-create" class="primary">Create room</button>
+        </div>
+        <div class="row">
+          <input id="join-code" maxlength="5" placeholder="Room code" />
+          <button id="btn-join">Join</button>
+        </div>
+      </div>
+      <div id="lobby-room" hidden>
+        <div class="room-code">Room <b id="room-code"></b></div>
+        <div class="row"><input id="room-link" readonly /><button id="btn-copy">Copy link</button></div>
+        <ul id="players"></ul>
+        <div id="host-controls">
+          <label>You play first half as
+            <select id="host-side">
+              <option value="random">Random</option>
+              <option value="T">Terrorists</option>
+              <option value="CT">Counter-Terrorists</option>
+            </select>
+          </label>
+          <div class="row">
+            <button id="btn-levers">Levers…</button>
+            <button id="btn-start" class="primary">Start match</button>
+          </div>
+        </div>
+        <p id="guest-note" class="muted">Waiting for the host to start. <a href="#" id="btn-levers-guest">View levers</a></p>
+      </div>
+      <p id="lobby-error" class="error"></p>
+    </div>
+  </div>
+
+  <div id="game" class="screen" hidden>
+    <header id="hud">
+      <div id="hud-score"></div>
+      <div id="hud-mid"></div>
+      <div id="hud-right"></div>
+    </header>
+    <main>
+      <div id="board-wrap">
+        <canvas id="board"></canvas>
+        <div id="replay-bar" hidden>
+          <button data-r="prev">◀</button>
+          <span id="replay-label"></span>
+          <button data-r="next">▶</button>
+          <button data-r="play">Replay</button>
+          <button data-r="skip">Skip</button>
+        </div>
+        <div id="overlay" hidden></div>
+      </div>
+      <aside id="panel"></aside>
+    </main>
+    <section id="log"></section>
+  </div>
+
+  <dialog id="levers-dialog">
+    <form method="dialog">
+      <h2>Levers</h2>
+      <p class="muted" id="levers-note"></p>
+      <textarea id="levers-text" spellcheck="false"></textarea>
+      <p class="error" id="levers-error"></p>
+      <div class="row end">
+        <button value="cancel">Close</button>
+        <button type="button" id="levers-reset">Reset to defaults</button>
+        <button type="button" id="levers-apply" class="primary">Apply</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" hidden></div>
+  <script type="module" src="/client.js"></script>
+</body>
+</html>
