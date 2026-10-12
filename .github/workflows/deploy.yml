@@ -1,0 +1,51 @@
+name: Test and deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    steps:
+      - id: check
+        run: |
+          if [ -z "$FLY_API_TOKEN" ]; then
+            echo "::notice::FLY_API_TOKEN secret not set; skipping deploy"
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.enabled == 'true'
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+        if: steps.check.outputs.enabled == 'true'
+      - name: Create the app on first deploy
+        if: steps.check.outputs.enabled == 'true'
+        run: |
+          APP=$(grep '^app' fly.toml | cut -d'"' -f2)
+          flyctl status --app "$APP" >/dev/null 2>&1 || flyctl apps create "$APP" --org "${FLY_ORG:-personal}"
+        env:
+          FLY_ORG: ${{ vars.FLY_ORG }}
+      - name: Deploy (single machine — games live in memory)
+        if: steps.check.outputs.enabled == 'true'
+        run: flyctl deploy --remote-only --ha=false

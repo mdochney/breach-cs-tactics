@@ -89,6 +89,19 @@ The map is ASCII in `shared/map.js`:
 
 ## Deploy to fly.io
 
+### Automatic (GitHub Actions)
+
+`.github/workflows/deploy.yml` runs the tests on every push to `main`, then deploys to fly.io.
+
+1. Create a Fly org token: fly.io dashboard → Tokens, or run `fly tokens create org`.
+2. Add it as a repository secret named `FLY_API_TOKEN` (GitHub → Settings → Secrets and variables → Actions).
+3. Push to `main`.
+
+On the first run, the workflow creates the app named in `fly.toml` if it doesn't exist yet. To use an org other than `personal`, set a repo variable `FLY_ORG`. Without the secret, the deploy job is skipped and only the tests run.
+
+### Manual
+
+
 ```bash
 fly launch --no-deploy --copy-config   # pick a unique app name; keeps fly.toml
 fly deploy --ha=false                  # ONE machine: games are in memory
