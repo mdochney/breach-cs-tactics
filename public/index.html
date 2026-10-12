@@ -10,7 +10,7 @@
   <div id="lobby" class="screen">
     <div class="lobby-card">
       <h1>BREACH</h1>
-      <p class="tag">Turn-based Counter-Strike tactics for two players</p>
+      <p class="tag">Turn-based Counter-Strike tactics for two players · <a href="/rules.html" target="_blank" style="color:inherit">Combat mechanics ↗</a></p>
       <div id="lobby-entry">
         <label>Your name <input id="name" maxlength="24" placeholder="Player" /></label>
         <div class="row">
@@ -36,6 +36,7 @@
           </label>
           <div class="row">
             <button id="btn-levers">Levers…</button>
+            <button id="btn-rules">Mechanics</button>
             <button id="btn-start" class="primary">Start match</button>
           </div>
           <div class="row" id="cpu-row">
@@ -47,7 +48,7 @@
             <button id="btn-cpu">Play vs CPU</button>
           </div>
         </div>
-        <p id="guest-note" class="muted">Waiting for the host to start. <a href="#" id="btn-levers-guest">View levers</a></p>
+        <p id="guest-note" class="muted">Waiting for the host to start. <a href="#" id="btn-levers-guest">View levers</a> · <a href="#" id="btn-rules-guest">Mechanics</a></p>
       </div>
       <p id="lobby-error" class="error"></p>
     </div>

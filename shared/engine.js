@@ -81,6 +81,47 @@ export function inSetupZone(cfg, map, side, x, y) {
 // What a unit does if its player gives no order: stay hidden if already hidden on cover, else hold.
 export const defaultOrder = (map, u) => (u.hidden && map.isCover(u.x, u.y) ? { action: 'hide' } : { action: 'hold' });
 
+// ---------- combat math (shared with the Mechanics page so the docs can't drift) ----------
+
+export const rangeBand = (cfg, d) => (d <= cfg.combat.rangeBands[0] ? 0 : d <= cfg.combat.rangeBands[1] ? 1 : 2);
+
+// Returns the d100 target (a shot hits when roll <= this), plus the itemised modifiers.
+export function hitChanceBreakdown(cfg, w, o) {
+  const c = cfg.combat;
+  const band = rangeBand(cfg, o.distance);
+  const mv = w.movePenaltyMult ?? 1;
+  const parts = [[`Base (${['close', 'mid', 'far'][band]} range)`, w.accuracy[band]]];
+  if (o.shooterMove === 'run') parts.push([`Shooter ran this step (${c.runPenalty} x ${mv})`, -c.runPenalty * mv]);
+  else if (o.shooterMove === 'walk') parts.push([`Shooter walked this step (${c.walkPenalty} x ${mv})`, -c.walkPenalty * mv]);
+  if (o.shooterHolding) parts.push(['Shooter on Hold / Hide', c.holdBonus]);
+  if (o.shooterHidden) parts.push(['Shooter firing from Hidden', c.hiddenShooterBonus]);
+  if (o.targetInCover) parts.push(['Target on a cover tile', -c.targetInCoverPenalty]);
+  if (o.targetRan) parts.push(['Target ran this step', -c.targetRunningPenalty]);
+  if (o.shooterWounded) parts.push(['Shooter wounded', -c.woundedAccuracyPenalty]);
+  const raw = parts.reduce((a, [, v]) => a + v, 0);
+  const chance = Math.max(c.minHitChance, Math.min(c.maxHitChance, Math.round(raw)));
+  return { chance, raw, parts, band };
+}
+
+export const computeHitChance = (cfg, w, o) => hitChanceBreakdown(cfg, w, o).chance;
+
+// r01 is a uniform [0,1) draw for the damage variance.
+export function computeDamage(cfg, w, target, headshot, r01) {
+  const c = cfg.combat;
+  let dmg = w.damage * (1 + (r01 * 2 - 1) * c.damageVariance);
+  if (headshot) {
+    dmg *= target.helmet ? c.headshotMultiplierHelmet : c.headshotMultiplier;
+    if (target.helmet) dmg *= w.armorPen;
+  } else if (target.armor) dmg *= w.armorPen;
+  return Math.max(1, Math.round(dmg));
+}
+
+export const heDamage = (cfg, d, target) =>
+  Math.round(cfg.utility.he.damage * (1 - d / (cfg.utility.he.radius + 1)) * (target.hidden ? cfg.utility.hiddenDamageMultiplier : 1) * (target.armor ? cfg.utility.armorMultiplier : 1));
+
+export const fireDamage = (cfg, target) =>
+  Math.round(cfg.utility.molotov.damagePerTick * (target.hidden ? cfg.utility.hiddenDamageMultiplier : 1) * (target.armor ? cfg.utility.armorMultiplier : 1));
+
 export const moveAllowance = (cfg, u, action) =>
   Math.max(0, cfg.movement[action] - (isWounded(cfg, u) ? cfg.movement.woundedPenalty : 0));
 
@@ -440,31 +481,18 @@ function resolveTurn(state) {
     return alive().filter((v) => v.side !== u.side && dist(u, v) <= w.range && canSee(cfg, map, smoke, u, v));
   };
 
-  const hitChance = (u, tgt, w, shooterHidden) => {
-    const c = cfg.combat;
-    const d = dist(u, tgt);
-    const band = d <= c.rangeBands[0] ? 0 : d <= c.rangeBands[1] ? 1 : 2;
-    let p = w.accuracy[band];
-    const mv = w.movePenaltyMult ?? 1;
-    if (u._movedTick === 'run') p -= c.runPenalty * mv;
-    else if (u._movedTick === 'walk') p -= c.walkPenalty * mv;
-    if (holding(u)) p += c.holdBonus;
-    if (shooterHidden) p += c.hiddenShooterBonus;
-    if (map.isCover(tgt.x, tgt.y)) p -= c.targetInCoverPenalty;
-    if (tgt._movedTick === 'run') p -= c.targetRunningPenalty;
-    if (isWounded(cfg, u)) p -= c.woundedAccuracyPenalty;
-    return Math.max(c.minHitChance, Math.min(c.maxHitChance, Math.round(p)));
-  };
+  const hitChance = (u, tgt, w, shooterHidden) =>
+    computeHitChance(cfg, w, {
+      distance: dist(u, tgt),
+      shooterMove: u._movedTick,
+      shooterHolding: holding(u),
+      shooterHidden,
+      shooterWounded: isWounded(cfg, u),
+      targetInCover: map.isCover(tgt.x, tgt.y),
+      targetRan: tgt._movedTick === 'run',
+    });
 
-  const rollDamage = (w, tgt, hs) => {
-    const c = cfg.combat;
-    let dmg = w.damage * (1 + (nextRand(state) * 2 - 1) * c.damageVariance);
-    if (hs) {
-      dmg *= tgt.helmet ? c.headshotMultiplierHelmet : c.headshotMultiplier;
-      if (tgt.helmet) dmg *= w.armorPen;
-    } else if (tgt.armor) dmg *= w.armorPen;
-    return Math.max(1, Math.round(dmg));
-  };
+  const rollDamage = (w, tgt, hs) => computeDamage(cfg, w, tgt, hs, nextRand(state));
 
   const combat = () => {
     const canFire = (u) => u.alive && u.blind <= 0 && (cfg.combat.plantDefuseCanFire || !['plant', 'defuse'].includes(u._o.action));
@@ -572,7 +600,7 @@ function resolveTurn(state) {
       for (const v of alive()) {
         const d = dist(v, at);
         if (d <= U.he.radius && hasLOS(map, at, v, null)) {
-          const dmg = Math.round(U.he.damage * (1 - d / (U.he.radius + 1)) * (v.hidden ? U.hiddenDamageMultiplier : 1) * (v.armor ? U.armorMultiplier : 1));
+          const dmg = heDamage(cfg, d, v);
           v.hidden = false;
           damage(v, dmg, u, 'he');
         }
@@ -648,7 +676,7 @@ function resolveTurn(state) {
       const owner = state.units.find((x) => x.id === f.owner);
       for (const v of alive()) {
         if (dist(v, f) <= f.r) {
-          const dmg = Math.round(cfg.utility.molotov.damagePerTick * (v.hidden ? cfg.utility.hiddenDamageMultiplier : 1) * (v.armor ? cfg.utility.armorMultiplier : 1));
+          const dmg = fireDamage(cfg, v);
           v.hidden = false;
           damage(v, dmg, owner, 'molotov');
         }

@@ -104,6 +104,25 @@ $('#players').addEventListener('click', (e) => {
   if (e.target.closest('[data-remove-cpu]')) send({ t: 'removeCpu' });
 });
 $('#btn-levers').onclick = () => openLevers();
+// Mechanics page renders from the levers in effect for this room/match.
+function openRules() {
+  const cfg = S.view?.cfg || S.lobby?.config;
+  try {
+    if (cfg) localStorage.setItem('breach:rulesCfg', JSON.stringify(cfg));
+  } catch {}
+  window.open(cfg ? '/rules.html?src=match' : '/rules.html', '_blank');
+}
+$('#btn-rules').onclick = () => openRules();
+$('#btn-rules-guest').onclick = (e) => {
+  e.preventDefault();
+  openRules();
+};
+document.addEventListener('click', (e) => {
+  if (e.target.closest('[data-open-rules]')) {
+    e.preventDefault();
+    openRules();
+  }
+});
 $('#btn-levers-guest').onclick = (e) => {
   e.preventDefault();
   openLevers();
@@ -871,7 +890,7 @@ function renderHud() {
   let bomb = '';
   if (v.bomb?.state === 'planted') bomb = ` · <b style="color:var(--red)">BOMB ${v.bomb.site ?? ''} — ${v.bomb.timer} turn${v.bomb.timer === 1 ? '' : 's'}</b>`;
   $('#hud-mid').innerHTML = `<div class="side-${v.side}"><b>${SIDE_NAME[v.side]}</b></div><div>${phase}${bomb} <span class="timer" id="timer"></span></div>`;
-  $('#hud-right').innerHTML = `<div class="money">$${v.money.toLocaleString()}</div><div class="muted">Enemies alive: ${v.enemyAlive}</div>`;
+  $('#hud-right').innerHTML = `<div class="money">$${v.money.toLocaleString()}</div><div class="muted">Enemies alive: ${v.enemyAlive} · <a href="#" data-open-rules style="color:inherit">Mechanics ↗</a></div>`;
 }
 
 function updateTimer() {

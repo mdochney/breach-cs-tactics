@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Breach — Combat mechanics</title>
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    html, body { height: auto; }
+    .doc { max-width: 1100px; margin: 0 auto; padding: 24px 20px 80px; line-height: 1.5; }
+    .doc a { color: var(--accent); }
+    .doc h1 { margin: 0; color: var(--accent); letter-spacing: 0.04em; }
+    .doc h2 { margin: 36px 0 8px; padding-bottom: 6px; border-bottom: 1px solid var(--line); font-size: 20px; }
+    .doc h3 { margin: 20px 0 6px; font-size: 15px; color: #d8d2c4; }
+    .doc p, .doc li { color: #d4cfc4; max-width: 78ch; }
+    .src { display: inline-block; margin-top: 6px; padding: 3px 10px; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--line); font-size: 12px; }
+    nav.toc { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 14px 0 0; font-size: 13px; }
+    nav.toc a { color: var(--muted); text-decoration: none; }
+    nav.toc a:hover { color: var(--text); }
+    table { border-collapse: collapse; width: 100%; font-size: 13px; margin: 8px 0; font-variant-numeric: tabular-nums; }
+    th, td { border-bottom: 1px solid var(--line); padding: 5px 8px; text-align: right; white-space: nowrap; }
+    th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+    th:first-child, td:first-child { text-align: left; }
+    td.l, th.l { text-align: left; white-space: normal; }
+    tr.total td { font-weight: 700; border-top: 2px solid var(--line); }
+    .pos { color: var(--green); }
+    .neg { color: var(--red); }
+    .scroll { overflow-x: auto; }
+    code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; background: #0e0f11; padding: 1px 5px; border-radius: 4px; }
+    pre.formula { background: #0e0f11; border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; font-size: 13px; overflow-x: auto; color: #e9e3d3; }
+    .calc { display: grid; grid-template-columns: 320px 1fr; gap: 20px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+    .calc label { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 7px 0; font-size: 13px; }
+    .calc label.cb { justify-content: flex-start; }
+    .calc select, .calc input[type=number] { width: 150px; }
+    .calc input[type=range] { width: 150px; }
+    .big { font-size: 30px; font-weight: 700; color: var(--accent); }
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 10px 0 4px; }
+    .kpi { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+    .kpi .v { font-size: 22px; font-weight: 700; }
+    .kpi .k { color: var(--muted); font-size: 12px; }
+    .bar { height: 10px; background: #000; border-radius: 5px; overflow: hidden; display: flex; margin: 6px 0 2px; }
+    .bar i { display: block; height: 100%; }
+    .note { color: var(--muted); font-size: 12.5px; }
+    .warn { color: var(--red); font-weight: 600; }
+    @media (max-width: 820px) { .calc { grid-template-columns: 1fr; } .kpis { grid-template-columns: repeat(2, 1fr); } }
+  </style>
+</head>
+<body>
+  <div class="doc">
+    <h1>Combat mechanics</h1>
+    <div id="src" class="src"></div>
+    <nav class="toc">
+      <a href="#calc">Shot calculator</a>
+      <a href="#shot">How a shot resolves</a>
+      <a href="#mods">Hit modifiers</a>
+      <a href="#weapons">Weapons</a>
+      <a href="#matrix">Weapon matchups</a>
+      <a href="#turn">Turn order</a>
+      <a href="#vision">Vision, hiding &amp; noise</a>
+      <a href="#utility">Utility</a>
+      <a href="#bomb">Bomb</a>
+      <a href="#economy">Economy</a>
+    </nav>
+
+    <h2 id="calc">Shot calculator</h2>
+    <p>Set up a shooter and a target to see the exact d100 target number, the damage each hit can do, and the odds of a kill. It uses the same functions as the game engine, with the levers shown above.</p>
+    <div class="calc">
+      <div id="calc-inputs"></div>
+      <div id="calc-out"></div>
+    </div>
+
+    <h2 id="shot">How a shot resolves</h2>
+    <div id="shot-body"></div>
+
+    <h2 id="mods">Hit modifiers</h2>
+    <div id="mods-body"></div>
+
+    <h2 id="weapons">Weapons</h2>
+    <div id="weapons-body" class="scroll"></div>
+
+    <h2 id="matrix">Weapon matchups</h2>
+    <div id="matrix-body" class="scroll"></div>
+
+    <h2 id="turn">Turn order</h2>
+    <div id="turn-body"></div>
+
+    <h2 id="vision">Vision, hiding &amp; noise</h2>
+    <div id="vision-body"></div>
+
+    <h2 id="utility">Utility</h2>
+    <div id="utility-body" class="scroll"></div>
+
+    <h2 id="bomb">Bomb</h2>
+    <div id="bomb-body"></div>
+
+    <h2 id="economy">Economy</h2>
+    <div id="economy-body" class="scroll"></div>
+  </div>
+  <script type="module" src="/rules.js"></script>
+</body>
+</html>

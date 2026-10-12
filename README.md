@@ -69,6 +69,18 @@ It prints the T round win rate, the average turns per round and how rounds end. 
 
 The combat log after each turn shows every roll ("d100 34 vs 62%: HIT 28").
 
+## Combat mechanics page
+
+`/rules.html` (the **Mechanics** buttons in the lobby and in-game HUD) spells out every rule with live numbers. It includes:
+
+- the hit-chance and damage formulas
+- a shot calculator: weapon, distance, stances, armor and cover → d100 target, damage range and kill odds
+- the full weapon table
+- a weapon-vs-armor kill-odds matrix
+- utility damage tables, and the turn order, vision, bomb and economy rules
+
+It renders from the levers in effect for your room, using the same functions the engine uses (`hitChanceBreakdown`, `computeDamage`, `heDamage`, `fireDamage` in `shared/engine.js`), so it can't drift from the actual rules.
+
 ## Fog of war
 
 The server holds the full state. Each client receives only `viewFor(state, player)`, which contains:
