@@ -85,6 +85,7 @@ The map is ASCII in `shared/map.js`:
 | `A` / `B` | site floor |
 | `a` / `b` | site cover |
 | `T` / `C` | spawn zones |
+| `t` / `k` | cover inside T / CT spawn |
 
 ## Deploy to fly.io
 

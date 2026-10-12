@@ -436,8 +436,8 @@ function drawTiles() {
       if (c === '#') col = COLORS.wall;
       else if (c === 'A' || c === 'a') col = COLORS.siteA;
       else if (c === 'B' || c === 'b') col = COLORS.siteB;
-      else if (c === 'T') col = COLORS.spawnT;
-      else if (c === 'C') col = COLORS.spawnC;
+      else if (c === 'T' || c === 't') col = COLORS.spawnT;
+      else if (c === 'C' || c === 'k') col = COLORS.spawnC;
       ctx.fillStyle = col;
       ctx.fillRect(x * ts, y * ts, ts, ts);
       if (c === '#') {

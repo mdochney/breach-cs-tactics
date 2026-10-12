@@ -6,8 +6,8 @@
 //   c  cover (floor; a unit here can go Hidden)
 //   A  bomb site A floor      a  bomb site A cover
 //   B  bomb site B floor      b  bomb site B cover
-//   T  terrorist spawn / setup zone
-//   C  counter-terrorist spawn / setup zone
+//   T  terrorist spawn / setup zone       t  T spawn cover
+//   C  counter-terrorist spawn / setup zone  k  CT spawn cover
 
 export const MAPS = {
   dust: {
@@ -15,7 +15,7 @@ export const MAPS = {
     ascii: [
       '####################################',
       '#BBBBBBBBB####CCCCCCCC####AAAAAAAAA#',
-      '#BBbbBBbBB.c..CCCcCCcC..c.AAaaAAAaA#',
+      '#BBbbBBbBB.c..CCCkCCkC..c.AAaaAAAaA#',
       '#BBBB#BBBB....CCCCCCCC....AAAAAAAAA#',
       '#BBBB##BBB######....######AAAA##AAA#',
       '#BBBBBBBBB######....######AAAAA#AAA#',
@@ -33,7 +33,7 @@ export const MAPS = {
       '##............##....##............##',
       '#############TTTTTTTTTT#############',
       '#############TTTTTTTTTT#############',
-      '#############TcTTTTTTcT#############',
+      '#############TtTTTTTTtT#############',
       '#############TTTTTTTTTT#############',
       '#############TTTTTTTTTT#############',
       '####################################',
@@ -60,14 +60,14 @@ export function getMap(id = 'dust') {
     at,
     walkable: (x, y) => at(x, y) !== '#',
     blocksLOS: (x, y) => at(x, y) === '#',
-    isCover: (x, y) => 'cab'.includes(at(x, y)),
+    isCover: (x, y) => 'cabtk'.includes(at(x, y)),
     siteAt: (x, y) => {
       const c = at(x, y);
       if (c === 'A' || c === 'a') return 'A';
       if (c === 'B' || c === 'b') return 'B';
       return null;
     },
-    isSpawn: (x, y, side) => at(x, y) === (side === 'T' ? 'T' : 'C'),
+    isSpawn: (x, y, side) => (side === 'T' ? 'Tt' : 'Ck').includes(at(x, y)),
   };
   cache.set(id, map);
   return map;
